@@ -17,25 +17,40 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" >
 
-            <com.google.android.material.button.MaterialButton
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/register"
-                android:text="Register"
-                android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.Button"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VERIFY OTP"
+            android:textSize="30sp"
+            android:textColor="@android:color/white"
+            android:layout_gravity="center_horizontal"/>
+
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/otp"
+            android:hint="OTP"
+            android:inputType="text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:met_textColorHint="#fff"
+            app:met_baseColor="@android:color/white"
+            app:met_primaryColor="@android:color/white" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <com.google.android.material.button.MaterialButton
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:id="@+id/login"
-                android:text="Login"
-                android:layout_marginTop="10dp"
+                android:id="@+id/verify_button"
+                android:layout_marginTop="18dp"
+                android:text="Verify OTP"
                 style="@style/Widget.MaterialComponents.Button"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
