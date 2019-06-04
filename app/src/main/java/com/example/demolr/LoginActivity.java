@@ -1,5 +1,6 @@
 package com.example.demolr;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -64,10 +65,13 @@ public class LoginActivity extends AppCompatActivity {
                 .subscribe(new Consumer<String>() {
                     @Override
                     public void accept(String s) throws Exception {
-                        if(s.contains("password"))
-                            Toast.makeText(LoginActivity.this,"Login Success",Toast.LENGTH_SHORT).show();
-                        else
-                            Toast.makeText(LoginActivity.this,""+s,Toast.LENGTH_SHORT).show();
+                        if(s.contains("uname")) {
+                            Toast.makeText ( LoginActivity.this, "Login Success", Toast.LENGTH_SHORT ).show ();
+                            Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
+                            startActivity(intent);
+                        }else {
+                            Toast.makeText ( LoginActivity.this, "" + s, Toast.LENGTH_SHORT ).show ();
+                        }
                     }
                 })
         );

@@ -60,6 +60,7 @@ public class RegisterActivity extends AppCompatActivity {
             int randomNumber = random.nextInt(999999);
 
             String message = "&message=" + "Your OTP is" + randomNumber;
+            Log.d(TAG, message);
             String sender = "&sender=" + "TXTLCL";
             String numbers = "&numbers=" + "91" + mobile;
 
@@ -77,7 +78,6 @@ public class RegisterActivity extends AppCompatActivity {
                 stringBuffer.append(line);
             }
             rd.close();
-            Log.d(TAG,stringBuffer.toString());
             Toast.makeText ( getApplicationContext (),"OTP SENT SUCCESSFULLY", Toast.LENGTH_LONG).show();
             Intent intent = new Intent ( getApplicationContext (), OtpVerification.class );
 
