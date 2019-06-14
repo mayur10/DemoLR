@@ -1,6 +1,10 @@
 package com.example.demolr.Retrofit;
 
+import com.example.demolr.User;
+import java.util.List;
+
 import io.reactivex.Observable;
+import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.POST;
@@ -23,8 +27,16 @@ public interface INodeJs {
 
     @POST("users/login")
     @FormUrlEncoded
-    Observable<String> loginUser(
+    Call<User> login(
             @Field("uname") String username,
             @Field("password") String password
     );
+
+//    @POST("fetch/users")
+//    @FormUrlEncoded
+//    Observable<String> fetchUsers(
+//            @Field("lat") String lat,
+//            @Field("lng") String lng,
+//            @Field("id") String id
+//    );
 }

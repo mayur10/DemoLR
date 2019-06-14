@@ -39,4 +39,6 @@ dependencies {
     implementation 'com.github.material-components:material-components-android:1.0.0'
 
     implementation 'com.google.android.gms:play-services-location:16.0.0'
+
+    implementation 'com.squareup.retrofit2:converter-gson:2.+'
 }

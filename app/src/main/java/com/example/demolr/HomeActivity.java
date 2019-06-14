@@ -1,99 +1,93 @@
 package com.example.demolr;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.Manifest;
+import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
-public class HomeActivity extends AppCompatActivity implements LocationListener {
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
-    LocationManager locationManager;
-    String provider;
+
+import com.example.demolr.Retrofit.INodeJs;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+
+public class HomeActivity extends AppCompatActivity  {
+    public final String TAG = "HOME ACTIVITY";
+    private static final int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
+    Context context = this;
+    TextView user_location;
+    private FusedLocationProviderClient mFusedLocationClient;
+    INodeJs myApi;
+    CompositeDisposable compositeDisposable = new CompositeDisposable();
+
+    @Override
+    protected void onStop() {
+        compositeDisposable.clear();
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        compositeDisposable.clear();
+        super.onDestroy();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setContentView(R.layout.home_view);
         super.onCreate(savedInstanceState);
-        locationManager = (LocationManager) getSystemService( Context.LOCATION_SERVICE);
-        provider = locationManager.getBestProvider(new Criteria (), false);
-        checkLocationPermission();
-        Location location = locationManager.getLastKnownLocation(provider);
-        if (location != null) {
-            Log.i("Location Info", "Location achieved!");
-            onLocationChanged(location);
-        } else {
-            Log.i("Location Info", "No location :(");
-        }
+        setContentView(R.layout.home_view);
+        user_location = findViewById(R.id.user_location);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        fetchLocation();
+
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        Double lat = location.getLatitude();
-        Double lng = location.getLongitude();
-        // Send location to api and fetch users around this location.
-        // Also store this location in users location db with a timestamp(what time user was here).
-        Log.i("Location info: Lat", lat.toString());
-        Log.i("Location info: Lng", lng.toString());
-        TextView user_location = (TextView)findViewById ( R.id.user_location );
-        user_location.setText ( "Latitude: " + lat.toString () +" And Longitude: " + lng.toString () );
-    }
+    private void fetchLocation() {
 
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-    }
+        if (ContextCompat.checkSelfPermission(HomeActivity.this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
 
-    @Override
-    public void onProviderEnabled(String provider) {
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Location location = locationManager.getLastKnownLocation(provider);
-            if (location != null) {
-                Log.i("Location Info", "Location achieved!");
-                onLocationChanged(location);
-            } else {
-                Log.i("Location Info", "No location :(");
-            }
-            //locationManager.requestLocationUpdates(provider, 400, 1, this);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.removeUpdates(this);
-        }
-    }
-
-    public boolean checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(HomeActivity.this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
                 new AlertDialog.Builder(this)
-                        .setTitle("LOCATION ACCESS")
-                        .setMessage("Give Location Access...")
+                        .setTitle("Required Location Permission")
+                        .setMessage("You have to give this permission to acess this feature")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                ActivityCompat.requestPermissions(HomeActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+                                ActivityCompat.requestPermissions(HomeActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+                            }
+                        })
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
                             }
                         })
                         .create()
@@ -101,28 +95,61 @@ public class HomeActivity extends AppCompatActivity implements LocationListener 
 
 
             } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(HomeActivity.this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
             }
-            return false;
         } else {
-            return true;
+            // Permission has already been granted
+            mFusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                // Logic to handle location object
+                                Double latittude = location.getLatitude();
+                                Double longitude = location.getLongitude();
+                                Log.i ( "Location Data", "Location Available" );
+                                Log.d(TAG, "Location is:" + latittude.toString () +"&"+ longitude.toString () +".");
+
+                                user_location.setText("Latitude = "+latittude + "\nLongitude = " + longitude);
+
+                               // fetchUsers(latittude.toString (),longitude.toString ());
+
+                            }
+                        }
+                    });
+
         }
     }
 
+//    private void fetchUsers(String lat, String lng) {
+//
+//        compositeDisposable.add(myApi.fetchUsers(lat,lng, id)
+//                .subscribeOn( Schedulers.io())
+//                .observeOn( AndroidSchedulers.mainThread())
+//                .subscribe(new Consumer<String> () {
+//                    @Override
+//                    public void accept(String s) throws Exception {
+//                        Log.d ( TAG, "response is:" + s);
+//                    }
+//                })
+//        );
+//    }
+
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                        //locationManager.requestLocationUpdates(provider, 400, 1, this);
-                    }
-                }else{
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                }
-                return;
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if(requestCode == MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION){
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                //abc
+            }else{
+
             }
         }
     }

@@ -1,47 +1,23 @@
 package com.example.demolr;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
-import com.example.demolr.Retrofit.INodeJs;
-import com.example.demolr.Retrofit.RetroFitClient;
 import com.google.android.material.button.MaterialButton;
 import com.rengwuxian.materialedittext.MaterialEditText;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
 
 public class LoginActivity extends AppCompatActivity {
 
-    INodeJs myApi;
-    CompositeDisposable compositeDisposable = new CompositeDisposable();
     MaterialEditText edit_username,edit_password;
     MaterialButton btn_login;
-
-    @Override
-    protected void onStop() {
-        compositeDisposable.clear();
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        compositeDisposable.clear();
-        super.onDestroy();
-    }
+    private final String TAG = "Login Activity";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.login_activity);
         super.onCreate(savedInstanceState);
-
-        Retrofit retrofit = RetroFitClient.getInstance();
-        myApi = retrofit.create(INodeJs.class);
 
         btn_login = (MaterialButton)findViewById(R.id.login_button);
 
@@ -59,23 +35,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
     private void loginUser(String username, String password) {
-        compositeDisposable.add(myApi.loginUser(username,password)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<String>() {
-                    @Override
-                    public void accept(String s) throws Exception {
-                        if(s.contains("uname")) {
-                            Toast.makeText ( LoginActivity.this, "Login Success", Toast.LENGTH_SHORT ).show ();
-                            Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
-                            startActivity(intent);
-                        }else {
-                            Toast.makeText ( LoginActivity.this, "" + s, Toast.LENGTH_SHORT ).show ();
-                        }
-                    }
-                })
-        );
-
+        Log.d ( TAG,"loginUser Called." );
     }
 
 }
