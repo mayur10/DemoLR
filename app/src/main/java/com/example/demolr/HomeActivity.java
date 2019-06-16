@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -16,47 +17,42 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.example.demolr.Retrofit.INodeJs;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
 
 public class HomeActivity extends AppCompatActivity  {
     public final String TAG = "HOME ACTIVITY";
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
     Context context = this;
+    SharedPreferences sharedPreferences;
     TextView user_location;
+    RequestQueue requestQueue;
     private FusedLocationProviderClient mFusedLocationClient;
-    INodeJs myApi;
-    CompositeDisposable compositeDisposable = new CompositeDisposable();
-
-    @Override
-    protected void onStop() {
-        compositeDisposable.clear();
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        compositeDisposable.clear();
-        super.onDestroy();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_view);
+        requestQueue = Volley.newRequestQueue(HomeActivity.this);
+        sharedPreferences = this.getSharedPreferences(Constants.userDetails, MODE_PRIVATE);
         user_location = findViewById(R.id.user_location);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
         fetchLocation();
-
     }
 
     private void fetchLocation() {
@@ -117,11 +113,48 @@ public class HomeActivity extends AppCompatActivity  {
                                 Double longitude = location.getLongitude();
                                 Log.i ( "Location Data", "Location Available" );
                                 Log.d(TAG, "Location is:" + latittude.toString () +"&"+ longitude.toString () +".");
+                                String Name = sharedPreferences.getString("Name",null);
+                                int id =  sharedPreferences.getInt("User_Id",0);
+                                user_location.setText("Hello, "+ Name +". Your Location is(Latitude = "+latittude + " & Longitude = " + longitude+").");
+                                HashMap<String, String> params = new HashMap<> ();
+                                params.put("lat", latittude.toString ());
+                                params.put("lng", longitude.toString ());
+                                params.put("id", Integer.toString(id));
+                                JsonObjectRequest request_json = new JsonObjectRequest ( Request.Method.POST, Constants.fetchUsers, new JSONObject (params),
+                                        new Response.Listener<JSONObject>() {
+                                            @Override
+                                            public void onResponse(final JSONObject response) {
+                                                try {
+                                                    Log.i("qwerty", "onResponse: " + response);
+                                                    //Process os success response
+                                                    String error = response.get("Error").toString();
+                                                    if (error.equals("true")) {
 
-                                user_location.setText("Latitude = "+latittude + "\nLongitude = " + longitude);
-
-                               // fetchUsers(latittude.toString (),longitude.toString ());
-
+                                                    } else if (error.equals("false")) {
+                                                        JSONArray jsonArray = null;
+                                                        try {
+                                                            jsonArray = (JSONArray) response.get("Response");
+                                                            Log.d ( TAG,"Response: "+ jsonArray);
+                                                        } catch (JSONException e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                    }
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }, new Response.ErrorListener() {
+                                            @Override
+                                            public void onErrorResponse(VolleyError error) {
+                                                Toast.makeText(context, "Please try again later", Toast.LENGTH_SHORT).show();
+                                                VolleyLog.e("Error: ", error.getMessage());
+                                            }
+                                        });
+                                        request_json.setRetryPolicy(new DefaultRetryPolicy (
+                                                0,
+                                                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                                                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+                                        requestQueue.add(request_json);
                             }
                         }
                     });
@@ -129,19 +162,6 @@ public class HomeActivity extends AppCompatActivity  {
         }
     }
 
-//    private void fetchUsers(String lat, String lng) {
-//
-//        compositeDisposable.add(myApi.fetchUsers(lat,lng, id)
-//                .subscribeOn( Schedulers.io())
-//                .observeOn( AndroidSchedulers.mainThread())
-//                .subscribe(new Consumer<String> () {
-//                    @Override
-//                    public void accept(String s) throws Exception {
-//                        Log.d ( TAG, "response is:" + s);
-//                    }
-//                })
-//        );
-//    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
